@@ -1,6 +1,6 @@
 
 #include <Python.h>
-#include "libadd.h"
+#include "libgoprime.h"
 
 
 PyMODINIT_FUNC initcmod(void);
