@@ -3,6 +3,7 @@
 package main
 
 import "C"
+import "math"
 
 
 //export GoisPrime
@@ -12,9 +13,11 @@ func GoisPrime(x int) int {
 		return 0;
 	}
 
-	for i := 2; i <= x; i++ {
+	ceil := int(math.Floor(math.Sqrt(float64(x)))) + 1
 
-		if i == x {
+	for i := 2; i <= ceil; i++ {
+
+		if i == ceil{
 			return 1;
 		}
 

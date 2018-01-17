@@ -5,6 +5,7 @@ from Python through my C wrapper
 """
 
 import goprime
+import math
 
 def isPrime(x):
     
@@ -12,8 +13,10 @@ def isPrime(x):
         return 0;
     i = 2;
 
-    while(i <= x):
-        if i == x:
+    ceil = int(math.floor(math.sqrt(float(x)))) + 1
+
+    while(i <= ceil):
+        if i == ceil:
             return 1;
         if x % i == 0:
             break;
@@ -28,6 +31,11 @@ def testprimes(n, func):
         if func(i):
             res.append(i)
 
-testprimes(100000, goprime.isprime)
-#testprimes(100000, isPrime)
+def sanitycheck(func):
+    for i in range(20):
+        if func(i):
+            print(i);
+
+testprimes(1000000, goprime.isprime)
+#testprimes(1000000, isPrime)
 
