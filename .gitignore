@@ -1,0 +1,7 @@
+
+
+# No Shared libraries, please
+*.so
+
+# No swap files from vim
+*.swp.*
