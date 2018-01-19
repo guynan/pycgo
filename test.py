@@ -36,6 +36,8 @@ def sanitycheck(func):
         if func(i):
             print(i);
 
-testprimes(1000000, goprime.isprime)
+#testprimes(1000000, goprime.isprime)
 #testprimes(1000000, isPrime)
+
+goprime.parse([x for x in range(20) if goprime.isprime(x)])
 

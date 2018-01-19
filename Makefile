@@ -16,6 +16,8 @@ build-c-wrapper:
 build-go-source:
 		go build -buildmode=c-shared -o $(GOLIB) $(GOSRC)
 
+c: build-c-wrapper
+
 test:
 	python3 $(PYTHON_TEST_SRC)
 

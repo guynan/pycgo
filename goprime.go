@@ -4,6 +4,7 @@ package main
 
 import "C"
 import "math"
+import "fmt"
 
 
 //export GoisPrime
@@ -30,6 +31,12 @@ func GoisPrime(x int) int {
 
 }
 
+//export parseArray
+func parseArray(k []int64) {
+
+	fmt.Println(k);
+
+}
 
 func main() {
 }
