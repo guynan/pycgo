@@ -5,3 +5,4 @@
 
 # No swap files from vim
 *.swp.*
+*.swp*
