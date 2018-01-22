@@ -2,7 +2,6 @@
 /* Python.h impiles `stdio, stdlib, etc` */
 #include <Python.h>
 #include "libgoprime.h"
-#include <stdlib.h>
 
 
 /* Function definitions */
@@ -13,15 +12,20 @@ PyMODINIT_FUNC initcmod(void);
 
 /* C Scoped helper functions */
 GoSlice _construct_go_int_slice(PyObject* list);
-PyObject* _construct_pylist_from_goslice(char* data);
+PyObject* _construct_pylist_from_goslice(struct unsafearray data);
 uint64_t isPrime(Py_ssize_t s);
 
 
 /* Externally visible Python functions */
-static PyObject* c_parseArray(PyObject* self, PyObject* args);
+
+/* Convention here is that we prefix the Go function with `C_` so we avoid
+ * namespace collisions but still show clearly the relationship between the two
+ * functions */
+
+static PyObject* C_parseArray(PyObject* self, PyObject* args);
 static PyObject* C_large_init(PyObject* self, PyObject* args);
 static PyObject * C_GoisPrime(PyObject* self, PyObject* args);
-static PyObject* c_returnslice(PyObject* self, PyObject* args);
+static PyObject* C_returnslice(PyObject* self, PyObject* args);
 
 
 /* End Function definitions */
@@ -37,13 +41,13 @@ static PyMethodDef ModuleMethods[] = {
         {"isprime",  C_GoisPrime, METH_VARARGS,
         "Call our Go function through the C wrapper."},
 
-        {"parse",  c_parseArray, METH_VARARGS,
+        {"parse",  C_parseArray, METH_VARARGS,
         "Parse a Python list into a Go Slice."},
 
         {"large_init",  C_large_init, METH_VARARGS,
         "Generates a big ass list in the C api."},
         
-        {"ret",  c_returnslice, METH_VARARGS,
+        {"ret",  C_returnslice, METH_VARARGS,
         "Parse Go Slice into python list."},
 
         /* Sentinel */
@@ -83,9 +87,6 @@ PyMODINIT_FUNC PyInit_goprime(void)
 /* End Python module setup */
 
 
-/* Convention here is that we prefix the Go function with `C_` so we avoid
- * namespace collisions but still show clearly the relationship between the two
- * functions */
 static PyObject* C_GoisPrime(PyObject* self, PyObject* args)
 {
         int x = 0;
@@ -96,12 +97,14 @@ static PyObject* C_GoisPrime(PyObject* self, PyObject* args)
         return PyLong_FromLong((long) GoisPrime(x));
 }
 
-static PyObject* c_returnslice(PyObject* self, PyObject* args)
+
+static PyObject* C_returnslice(PyObject* self, PyObject* args)
 {
        return _construct_pylist_from_goslice(returnArray());
 }
 
-static PyObject* c_parseArray(PyObject* self, PyObject* args)
+
+static PyObject* C_parseArray(PyObject* self, PyObject* args)
 {
         PyObject* list;
 
@@ -155,21 +158,25 @@ GoSlice _construct_go_int_slice(PyObject* list)
 
 /* Creation of a Python list by reading the data from a Go slice. At the moment
  * it only supports the int type which is uint64_t */
-PyObject* _construct_pylist_from_goslice(char* data)
+PyObject* _construct_pylist_from_goslice(struct unsafearray arr)
 {
-        /* Assumes that our data coming to us is of type int64_t */
+        /* Assumes that our data coming to us is of byte type */
+        char* data = arr.data;
+        int err;
 
         PyObject* list = NULL;
         PyObject* item = NULL;
-        int err;
 
-        /* Constant until I work around this */
-        list = PyList_New(0);
+        list = PyList_New(arr.length);
 
-        for(Py_ssize_t i = 0; i < 5; i++){
+        for(Py_ssize_t i = 0; i < arr.length; i++){
 
                 item = Py_BuildValue("C", data[i]);
-                err = PyList_Append(list, item);
+
+                if(!item)
+                        goto fuck;
+
+                err = PyList_SetItem(list, i, item);
 
                 if(err)
                         goto fuck;
@@ -178,7 +185,9 @@ PyObject* _construct_pylist_from_goslice(char* data)
 
 fuck:
 
-        Py_XDECREF(item);
+        if(item)
+                Py_XDECREF(item);
+
         free(data);
         data = NULL;
 

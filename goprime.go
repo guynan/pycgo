@@ -2,11 +2,18 @@
 
 package main
 
+/*
+struct unsafearray {
+	void* data;
+	int length;
+};
+*/
 import "C"
 import "math"
-import "unsafe"
+//import "unsafe"
 import "fmt"
 
+type UnsafeArray C.struct_unsafearray;
 
 //export GoisPrime
 func GoisPrime(x int) int {
@@ -41,12 +48,18 @@ func parseArray(k []int64) {
 
 
 //export returnArray
-func returnArray() unsafe.Pointer {
+func returnArray() UnsafeArray {
+
+	var res UnsafeArray;
 
 	primes := []byte("hello there");
 
-	return C.CBytes(primes);
+	res.data = C.CBytes(primes);
+	res.length = C.int(len(primes));
+
+	return res
 }
 
 func main() {
 }
+
