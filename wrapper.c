@@ -70,7 +70,21 @@ static struct PyModuleDef module = {
         -1,             
                  
         /* The table containing the information about our methods */
-        ModuleMethods
+        ModuleMethods,
+
+        /* A set of optional arguments */
+
+        /* An array of slot definitions for multi-phase initialization */
+        NULL,
+
+        /* A traversal function to call during GC traversal of the module */
+        NULL,
+
+        /* A clear function to call during GC clearing of the module */
+        NULL,
+
+        /* A function to call during deallocation of the module */
+        NULL,
 };
 
 
@@ -89,6 +103,8 @@ PyMODINIT_FUNC PyInit_goprime(void)
 
 static PyObject* C_GoisPrime(PyObject* self, PyObject* args)
 {
+        (void) self;
+
         int x = 0;
 
         if(!PyArg_ParseTuple(args, "i", &x))
@@ -100,15 +116,18 @@ static PyObject* C_GoisPrime(PyObject* self, PyObject* args)
 
 static PyObject* C_returnslice(PyObject* self, PyObject* args)
 {
-       return _construct_pylist_from_goslice(returnArray());
+        (void) self;
+        (void) args;
+
+        return _construct_pylist_from_goslice(returnArray());
 }
 
 
 static PyObject* C_parseArray(PyObject* self, PyObject* args)
 {
-        PyObject* list;
+        (void) self;
 
-        uint64_t ret = -1;
+        PyObject* list;
 
         if(!PyArg_ParseTuple(args, "O", &list))
                 goto cleanup;
@@ -131,6 +150,7 @@ cleanup:
 GoSlice _construct_go_int_slice(PyObject* list)
 {
         Py_ssize_t len = PyList_Size(list);
+        PyObject* item = NULL;
 
         /* We don't actually need to free this as it then cleaned up in the go
          * code by the garbage collection */
@@ -144,12 +164,19 @@ GoSlice _construct_go_int_slice(PyObject* list)
         */
 
         for(Py_ssize_t i = 0; i < len; i++){
-                PyObject* item = PyList_GetItem(list, i);
+                item = PyList_GetItem(list, i);
+                if(!item)
+                        goto cleanup;
+
                 data[i] = PyLong_AsLongLong(item);
         }
 
         /* initialise and return a Go Slice */
         GoSlice slice = {.data = data, .len = len, .cap = len,};
+
+cleanup:
+        
+        Py_XDECREF(item);
 
         return slice;
 
@@ -177,6 +204,7 @@ PyObject* _construct_pylist_from_goslice(struct unsafearray arr)
                         goto fuck;
 
                 err = PyList_SetItem(list, i, item);
+                Py_XDECREF(item);
 
                 if(err)
                         goto fuck;
@@ -198,6 +226,8 @@ fuck:
 
 static PyObject* C_large_init(PyObject* self, PyObject* args)
 {
+        (void) self;
+
         PyObject* list = NULL;
 
         int x = 0;
