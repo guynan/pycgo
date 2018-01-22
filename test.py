@@ -4,6 +4,20 @@ differences in performance between native python code and calling go
 from Python through my C wrapper
 """
 
+class Other:
+    
+    def __init__(self, k):
+        self.k = k;
+
+
+class This:
+    
+    def __init__(self, x, cls):
+        self.x = x;
+        self.cls = cls;
+
+
+
 import goprime
 import math
 
@@ -38,6 +52,11 @@ def sanitycheck(func):
 
 #testprimes(1000000, goprime.isprime)
 #testprimes(1000000, isPrime)
+n = 10000000
+#[x for x in range(n) if goprime.isprime(x)]
+print([x for x in range(40) if goprime.isprime(x)])
+#goprime.large_init(n);
+print(goprime.ret());
 
-goprime.parse([x for x in range(20) if goprime.isprime(x)])
+#goprime.ret()
 

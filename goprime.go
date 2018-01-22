@@ -4,6 +4,7 @@ package main
 
 import "C"
 import "math"
+import "unsafe"
 import "fmt"
 
 
@@ -36,6 +37,15 @@ func parseArray(k []int64) {
 
 	fmt.Println(k);
 
+}
+
+
+//export returnArray
+func returnArray() unsafe.Pointer {
+
+	primes := []byte("hello there");
+
+	return C.CBytes(primes);
 }
 
 func main() {

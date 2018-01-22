@@ -13,12 +13,15 @@ PyMODINIT_FUNC initcmod(void);
 
 /* C Scoped helper functions */
 GoSlice _construct_go_int_slice(PyObject* list);
-PyObject* _construct_pylist_from_goslice(GoSlice slice);
+PyObject* _construct_pylist_from_goslice(char* data);
+uint64_t isPrime(Py_ssize_t s);
 
 
 /* Externally visible Python functions */
 static PyObject* c_parseArray(PyObject* self, PyObject* args);
+static PyObject* C_large_init(PyObject* self, PyObject* args);
 static PyObject * C_GoisPrime(PyObject* self, PyObject* args);
+static PyObject* c_returnslice(PyObject* self, PyObject* args);
 
 
 /* End Function definitions */
@@ -36,6 +39,12 @@ static PyMethodDef ModuleMethods[] = {
 
         {"parse",  c_parseArray, METH_VARARGS,
         "Parse a Python list into a Go Slice."},
+
+        {"large_init",  C_large_init, METH_VARARGS,
+        "Generates a big ass list in the C api."},
+        
+        {"ret",  c_returnslice, METH_VARARGS,
+        "Parse Go Slice into python list."},
 
         /* Sentinel */
         {NULL, NULL, 0, NULL}
@@ -87,6 +96,10 @@ static PyObject* C_GoisPrime(PyObject* self, PyObject* args)
         return PyLong_FromLong((long) GoisPrime(x));
 }
 
+static PyObject* c_returnslice(PyObject* self, PyObject* args)
+{
+       return _construct_pylist_from_goslice(returnArray());
+}
 
 static PyObject* c_parseArray(PyObject* self, PyObject* args)
 {
@@ -142,33 +155,74 @@ GoSlice _construct_go_int_slice(PyObject* list)
 
 /* Creation of a Python list by reading the data from a Go slice. At the moment
  * it only supports the int type which is uint64_t */
-PyObject* _construct_pylist_from_goslice(GoSlice slice)
+PyObject* _construct_pylist_from_goslice(char* data)
 {
-        /* Assumes that our data coming to us is of type uint64_t */
-        uint64_t* data = slice.data;
+        /* Assumes that our data coming to us is of type int64_t */
 
         PyObject* list = NULL;
         PyObject* item = NULL;
+        int err;
 
-        list = PyList_New(slice.cap);
+        /* Constant until I work around this */
+        list = PyList_New(0);
 
-        for(Py_ssize_t i = 0; i < slice.cap; i++){
+        for(Py_ssize_t i = 0; i < 5; i++){
 
-                item = PyLong_FromLongLong(data[i]);
+                item = Py_BuildValue("C", data[i]);
+                err = PyList_Append(list, item);
 
-                if(PyList_SetItem(list, i, item) < 0)
+                if(err)
                         goto fuck;
 
         }
 
-        /* BIG question -- Do I free the data??? */
-
 fuck:
+
         Py_XDECREF(item);
+        free(data);
+        data = NULL;
 
         return list;
 
 }
 
 
+static PyObject* C_large_init(PyObject* self, PyObject* args)
+{
+        PyObject* list = NULL;
+
+        int x = 0;
+
+        if(!PyArg_ParseTuple(args, "i", &x))
+                return 0;
+
+        list = PyList_New(100);
+
+        for(Py_ssize_t i = 0; i < x; i++){
+                if(isPrime(i)){
+                        (void) PyList_Append(list, PyLong_FromSsize_t(i));
+                }
+
+        }
+
+        return list;
+
+}
+
+/* Note that this is considerably faster than calling out to Go. */
+uint64_t isPrime(Py_ssize_t s)
+{
+        if (s < 2) return 0;
+
+        /* Preventing rounding errors */
+        Py_ssize_t top = (Py_ssize_t) round(sqrt(s) + 1);
+
+        for(Py_ssize_t i = 2; i < top; i++){
+
+                if(s % i == 0)
+                        return 0;
+        }
+
+        return 1;
+}
 
