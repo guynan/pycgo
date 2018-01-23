@@ -9,22 +9,30 @@ CFLAGS= -Wall -Wextra -pedantic --std=c99 -Werror
 PY_DEV_PATH=/usr/include/python3.6m/
 PYTHON_TEST_SRC=test.py
 
-all: build-go-source build-c-wrapper
+all: compile-lib
 
 gohelper.o: gohelper.h
 	gcc -shared -fPIC $(CFLAGS) -c gohelper.c -I $(PY_DEV_PATH)
 
-wrapper.o:
+wrapper.o: wrapper.h
 	gcc -shared -fPIC $(CFLAGS) -c wrapper.c -I $(PY_DEV_PATH)
 
-build-c-wrapper: gohelper.o wrapper.o
+libgoprime.so:
+		go build -buildmode=c-shared -o $(GOLIB) $(GOSRC)
+
+build-go-source: libgoprime.so
+
+build-c-wrapper: gohelper.o wrapper.o 
+
+goprime.so: libgoprime.so gohelper.o wrapper.o
 	gcc -shared -fPIC $(CFLAGS) -o $(CLIB) -I $(PY_DEV_PATH) \
 				./$(GOLIB) *.o
 
-build-go-source:
-		go build -buildmode=c-shared -o $(GOLIB) $(GOSRC)
+compile-lib: goprime.so
 
 c: build-c-wrapper
+
+go: build-go-source
 
 test:
 	python3 $(PYTHON_TEST_SRC)
