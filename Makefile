@@ -1,7 +1,6 @@
 CC=gcc
 GOC=go
 GOLIB=libgoprime.so
-CSRC=wrapper.c
 GOSRC=goprime.go
 CLIB=goprime.so
 
@@ -15,8 +14,11 @@ all: build-go-source build-c-wrapper
 gohelper.o: gohelper.h
 	gcc -shared -fPIC $(CFLAGS) -c gohelper.c -I $(PY_DEV_PATH)
 
-build-c-wrapper: gohelper.o
-	gcc -shared -fPIC $(CFLAGS) -o $(CLIB) $(CSRC) -I $(PY_DEV_PATH) \
+wrapper.o:
+	gcc -shared -fPIC $(CFLAGS) -c wrapper.c -I $(PY_DEV_PATH)
+
+build-c-wrapper: gohelper.o wrapper.o
+	gcc -shared -fPIC $(CFLAGS) -o $(CLIB) -I $(PY_DEV_PATH) \
 				./$(GOLIB) *.o
 
 build-go-source:
