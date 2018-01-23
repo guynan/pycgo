@@ -2,9 +2,11 @@
 
 # No Shared libraries, please
 *.so
+*.o
 
 # No swap files from vim
 *.swp.*
 *.swp*
 
 libgoprime.h
+

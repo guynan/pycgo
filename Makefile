@@ -12,8 +12,12 @@ PYTHON_TEST_SRC=test.py
 
 all: build-go-source build-c-wrapper
 
-build-c-wrapper:
-	gcc -shared -fPIC $(CFLAGS) -o $(CLIB) $(CSRC) -I $(PY_DEV_PATH) ./$(GOLIB)
+gohelper.o: gohelper.h
+	gcc -shared -fPIC $(CFLAGS) -c gohelper.c -I $(PY_DEV_PATH)
+
+build-c-wrapper: gohelper.o
+	gcc -shared -fPIC $(CFLAGS) -o $(CLIB) $(CSRC) -I $(PY_DEV_PATH) \
+				./$(GOLIB) *.o
 
 build-go-source:
 		go build -buildmode=c-shared -o $(GOLIB) $(GOSRC)
@@ -27,4 +31,4 @@ time:
 	time python3 $(PYTHON_TEST_SRC)
 
 clean:
-	rm *.so
+	rm -f *.so *.o libgoprime.h
