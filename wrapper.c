@@ -3,7 +3,7 @@
 
 #include <Python.h>
 #include "libgoprime.h"
-#include "pymodinit.h"
+#include "wrapper.h"
 #include "gohelper.h"
 
 
